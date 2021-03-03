@@ -1,0 +1,14 @@
+{
+  "name": "node",
+  "age": 18,
+  "children": [
+    {
+      "name": "fs",
+      "size": 20
+    },
+    {
+      "name": "王武",
+      "size": 50
+    }
+  ]
+}

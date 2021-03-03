@@ -1,0 +1,24 @@
+{
+  "name": "g-http-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "g-http-server": "./bin/www.js",
+    "ghs": "./bin/www.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "commander": "^7.1.0",
+    "debug": "^4.3.1",
+    "ejs": "^3.1.6",
+    "internal-ip": "^6.2.0",
+    "mime": "^2.5.2",
+    "public-ip": "^4.0.3"
+  }
+}
