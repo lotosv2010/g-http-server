@@ -1,28 +1,27 @@
 {
   "name": "g-http-server",
-  "version": "1.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "仿 http-server",
   "main": "index.js",
-  "bin": {
-    "g-http-server": "./bin/www.js",
-    "ghs": "./bin/www.js"
-  },
+  "bin": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lotosv2010/g-http-server.git"
+    "url": "git+https://github.com/lotosv2010/g-http-server.git"
   },
-  "author": "",
+  "keywords": [],
+  "author": "Robin",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lotosv2010/g-http-server/issues"
+  },
+  "homepage": "https://github.com/lotosv2010/g-http-server#readme",
   "dependencies": {
-    "chalk": "^4.1.0",
-    "commander": "^7.1.0",
-    "debug": "^4.3.1",
-    "ejs": "^3.1.6",
+    "chalk": "^4.1.2",
+    "debug": "^4.3.2",
     "internal-ip": "^6.2.0",
-    "mime": "^2.5.2",
-    "public-ip": "^4.0.3"
+    "mime": "^3.0.0"
   }
 }

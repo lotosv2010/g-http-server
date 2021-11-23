@@ -1,2 +1,9 @@
-### g-http-server
-仿 http-server
+# g-http-server 静态文件服务器
+
+- 可以在任意目录下启动一个静态文件服务器，并且把当前目录作为静态文件根目录
+
+## 使用
+
+```shell
+g-http-server -d 指定静态文件更目录 -p 指定端口号 -o 指定监听的主机
+```
