@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
 const stat = promisify(fs.stat);
+const readdir = promisify(fs.readdir);
 // 第三方模块
 const chalk = require('chalk');
 const internalIp = require('internal-ip');
@@ -10,13 +11,22 @@ const internalIp = require('internal-ip');
 // 每个debug实例都有一个名字，是否在控制台打印取决于环境变量中的DEBUG是否等于static:server
 const debug = require('debug')('static:server');
 const mime = require('mime');
+const Handlebars = require('handlebars');
 const config = require('./config');
 
 // 设置环境变量的值
 process.env.DEBUG = 'static:*';
 
+// 编译模版，得到一个渲染的方法，然后传入实际数据就可以得到渲染后的html
+const list = () => {
+  const template = fs.readFileSync(path.resolve(__dirname, 'template', 'list.html'), 'utf8');
+  return Handlebars.compile(template);
+}
+
 class Server {
-  constructor() {}
+  constructor() {
+    this.list = list();
+  }
   start() {
     const server = http.createServer();
     server.on('request', this.request.bind(this));
@@ -40,12 +50,33 @@ class Server {
         this.sendFile(req, res, filePath, statObj);
       } else {
         // 文件夹
-        const concatFilePath = path.join(filePath, 'index.html');
-        const statObj = await stat(concatFilePath);
-        this.sendFile(req, res, concatFilePath, statObj);
+        try {
+          const concatFilePath = path.join(filePath, 'index.html');
+          const statObj = await stat(concatFilePath);
+          this.sendFile(req, res, concatFilePath, statObj);
+        } catch (e) {
+          this.showList(req, res, filePath, statObj, pathname);
+        }
       }
     } catch (error) {
-      this.sendError(req, res, error)
+      this.sendError(req, res, error);
+    }
+  }
+  async showList(req, res, filePath, statObj, pathname) {
+    try {
+      let files = await readdir(filePath);
+      files = files.map(file => ({
+        name: file,
+        url: path.join(pathname, file)
+      }));
+      const html = this.list({
+        title: pathname,
+        files
+      });
+      res.setHeader('Content-Type', 'text/html;charset=utf-8;')
+      res.end(html)
+    } catch (error) {
+      this.sendError(req, res, error);
     }
   }
   sendFile(req, res, filePath, statObj) {
@@ -53,7 +84,7 @@ class Server {
       res.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`);
       fs.createReadStream(filePath).pipe(res);
     } catch (error) {
-      
+      this.sendError(req, res, error);
     }
   }
   sendError(req, res, error) {
