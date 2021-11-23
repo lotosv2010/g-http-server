@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "仿 http-server",
   "main": "index.js",
-  "bin": {},
+  "bin": {
+    "g-http-server": "bin/www"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +25,7 @@
     "debug": "^4.3.2",
     "handlebars": "^4.7.7",
     "internal-ip": "^6.2.0",
-    "mime": "^3.0.0"
+    "mime": "^3.0.0",
+    "yargs": "^17.2.1"
   }
 }

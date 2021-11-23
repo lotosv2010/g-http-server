@@ -24,25 +24,28 @@ const list = () => {
 }
 
 class Server {
-  constructor() {
+  constructor(argv) {
     this.list = list();
+    this.config = Object.assign({}, config, argv)
   }
   start() {
+    const {port, host, directory} = this.config;
     const server = http.createServer();
     server.on('request', this.request.bind(this));
-    server.listen(config.port, config.host, async () => {
-      console.log(chalk.yellowBright(`Starting up http-server, serving ./${config.directory.split('\/').pop()}\r\n`));
+    server.listen(port, host, async () => {
+      console.log(chalk.yellowBright(`Starting up http-server, serving ./${directory.split('\/').pop()}\r\n`));
       console.log(chalk.yellowBright(`Available on:`));
-      console.log(` http://${config.host}:${chalk.green(config.port)}`);
-      console.log(` http://${await internalIp.v4()}:${chalk.green(config.port)}`);
+      console.log(` http://${host}:${chalk.green(port)}`);
+      console.log(` http://${await internalIp.v4()}:${chalk.green(port)}`);
       console.log(`Hit CTRL-C to stop the server`);
     })
   }
   // 静态服务器
   async request(req, res) {
+    const {directory} = this.config;
     // 先取到客户端想要的文件或文件路径
     const {pathname} = new URL(req.url, `http://${req.headers.host}`);
-    let filePath = path.join(config.directory, pathname);
+    let filePath = path.join(directory, pathname);
     try {
       const statObj = await stat(filePath);
       if(statObj.isFile()) {
@@ -90,9 +93,8 @@ class Server {
   sendError(req, res, error) {
     debug(error);
     res.statusCode = 500;
-    res.end(`there is something wrong in server! please try later!`);
+    res.end(error.toString() || `there is something wrong in server! please try later!`);
   }
 }
 
-const server = new Server()
-server.start()
+module.exports = Server;
