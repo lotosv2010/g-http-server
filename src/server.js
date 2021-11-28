@@ -4,6 +4,7 @@ const fs = require('fs');
 const { promisify } = require('util');
 const stat = promisify(fs.stat);
 const readdir = promisify(fs.readdir);
+const zlib = require('zlib');
 // 第三方模块
 const chalk = require('chalk');
 const internalIp = require('internal-ip');
@@ -58,13 +59,29 @@ class Server {
           const statObj = await stat(concatFilePath);
           this.sendFile(req, res, concatFilePath, statObj);
         } catch (e) {
-          this.showList(req, res, filePath, statObj, pathname);
+          try {
+            const concatFilePath = path.join(filePath, 'public', 'index.html');
+            const statObj = await stat(concatFilePath);
+            this.sendFile(req, res, concatFilePath, statObj);
+          } catch (error) {
+            this.showList(req, res, filePath, statObj, pathname);
+          }
         }
       }
     } catch (error) {
-      this.sendError(req, res, error);
+      const url = new URL(`${req.headers.referer}`);
+      const filePath = path.join(directory, url.pathname, './public', pathname);
+      try {
+        const statObj = await stat(filePath);
+        if(statObj.isFile()) {
+          this.sendFile(req, res, filePath, statObj);
+        }
+      } catch (error) {
+        this.sendError(req, res, error);
+      }
     }
   }
+  // todo 显示文件目录和所有内容
   async showList(req, res, filePath, statObj, pathname) {
     try {
       let files = await readdir(filePath);
@@ -85,9 +102,28 @@ class Server {
   sendFile(req, res, filePath, statObj) {
     try {
       res.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`);
-      fs.createReadStream(filePath).pipe(res);
+      const encoding = this.gerEncoding(req, res);
+      if(encoding) {
+        fs.createReadStream(filePath).pipe(encoding).pipe(res);
+      } else {
+        fs.createReadStream(filePath).pipe(res);
+      }
+      
     } catch (error) {
       this.sendError(req, res, error);
+    }
+  }
+  // todo压缩
+  gerEncoding(req, res) {
+    const encoding = req.headers['accept-encoding'];
+    if(encoding.match(/\bgzip\b/)) {
+      res.setHeader('Content-Encoding', 'gzip');
+      return zlib.createGzip();
+    } else if (encoding.match(/\bdeflate\b/)) {
+      res.setHeader('Content-Encoding', 'deflate');
+      return zlib.createDeflate();
+    } else {
+      return null;
     }
   }
   sendError(req, res, error) {
