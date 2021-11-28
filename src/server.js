@@ -5,6 +5,7 @@ const { promisify } = require('util');
 const stat = promisify(fs.stat);
 const readdir = promisify(fs.readdir);
 const zlib = require('zlib');
+const crypto = require('crypto');
 // 第三方模块
 const chalk = require('chalk');
 const internalIp = require('internal-ip');
@@ -101,6 +102,8 @@ class Server {
   }
   sendFile(req, res, filePath, statObj) {
     try {
+      // 缓存, 如果走缓存，直接返回
+      if(this.handleCache(req, res, filePath, statObj)) return;
       res.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`);
       const encoding = this.gerEncoding(req, res);
       if(encoding) {
@@ -125,6 +128,30 @@ class Server {
     } else {
       return null;
     }
+  }
+  // todo缓存
+  handleCache(req, res, filePath, statObj) {
+    // todo强缓存
+    // Expires
+    res.setHeader('Expires', new Date(Date.now() + 10 * 1000).toGMTString());
+    // Cache-Control
+    res.setHeader('Cache-Control', 'max-age=10');
+    // todo协商缓存
+    // if-modified-since
+    const ifModifiedSince = req.headers['if-modified-since'];
+    const ctime = statObj.ctime.toGMTString();
+    res.setHeader('Last-Modified', ctime);
+    // ETag
+    const ifNoneMatch = req.headers['if-none-match'];
+    const fileSize = Buffer.from(statObj.size.toString());
+    const etag = crypto.createHash('md5').update(fileSize).digest('base64');
+    res.setHeader('Etag', etag);
+    if((ifNoneMatch && ifNoneMatch == etag) || (ifModifiedSince && ifModifiedSince == ctime)) {
+      res.statusCode = 304;
+      res.end();
+      return true;
+    }
+    return false;
   }
   sendError(req, res, error) {
     debug(error);
