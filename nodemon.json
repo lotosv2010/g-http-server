@@ -1,0 +1,11 @@
+{
+  "restartable": "rs",
+  "colors": true,
+  "exec": "ghs",
+  "verbose": true,
+  "watch": [
+    "bin/**/*.js",
+    "src/**/*.js"
+  ],
+  "delay": 1000
+}

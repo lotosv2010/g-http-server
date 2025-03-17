@@ -122,6 +122,7 @@ class Server {
       console.log(chalk.yellowBright(`Available on:`))
       console.log(` http://${this.host}:${chalk.green(this.port)}`)
       console.log(` http://${await internalIp.v4()}:${chalk.green(this.port)}`)
+      console.log(chalk.blueBright(`Hit CTRL-C to stop the server`))
     })
   }
 }
