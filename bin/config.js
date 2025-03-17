@@ -8,7 +8,7 @@ const config = {
   directory: {
     option: '-d,--directory <dir>',
     description: 'set your start directory',
-    usage: 'g-http-server --directory 3000',
+    usage: 'g-http-server --directory ./public',
     defaultValue: process.cwd()
   },
   host: {

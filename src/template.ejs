@@ -1,13 +1,102 @@
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <%dirs.forEach(item =>{%>
-    <li><a href="<%=item.href%>"><%=item.dir%></a></li>
-  <%})%>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>目录列表</title>
+    <style>
+      body {
+        font-size: 16px;
+        color: #333;
+      }
+      svg {
+        width: 16px;
+        height: 16px;
+        margin-right: 10px;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .permission {
+        padding-right: 10px;
+        min-width: 105px;
+      }
+      .time {
+        margin-right: 10px;
+        min-width: 185px;
+      }
+      .size {
+        margin-right: 20px;
+        min-width: 100px;
+        flex-grow: 0;
+        flex-shrink: 0;
+        flex-basis: content;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Index of</h1>
+    <% dirs.forEach((item) => { %>
+    <div class="item">
+      <% if(item.isFile) { %>
+      <svg
+        t="1742198842779"
+        class="icon"
+        viewBox="0 0 1024 1024"
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        p-id="2705"
+        width="200"
+        height="200"
+      >
+        <path
+          d="M682.666667 245.333333a10.666667 10.666667 0 0 0 10.666666 10.666667h189.913334c-0.913333-1.066667-1.86-2.12-2.866667-3.126667L685.793333 58.286667c-1.006667-1.006667-2.06-1.953333-3.126666-2.866667z"
+          fill="#5C5C66"
+          p-id="2706"
+        ></path>
+        <path
+          d="M640 245.333333V42.666667H181.333333a53.393333 53.393333 0 0 0-53.333333 53.333333v832a53.393333 53.393333 0 0 0 53.333333 53.333333h661.333334a53.393333 53.393333 0 0 0 53.333333-53.333333V298.666667h-202.666667a53.393333 53.393333 0 0 1-53.333333-53.333334z m-320 10.666667h170.666667a21.333333 21.333333 0 0 1 0 42.666667H320a21.333333 21.333333 0 0 1 0-42.666667z m384 512H320a21.333333 21.333333 0 0 1 0-42.666667h384a21.333333 21.333333 0 0 1 0 42.666667z m21.333333-234.666667a21.333333 21.333333 0 0 1-21.333333 21.333334H320a21.333333 21.333333 0 0 1 0-42.666667h384a21.333333 21.333333 0 0 1 21.333333 21.333333z"
+          fill="#5C5C66"
+          p-id="2707"
+        ></path>
+      </svg>
+      <% } %> <% if(!item.isFile) { %>
+      <svg
+        t="1742198867525"
+        class="icon"
+        viewBox="0 0 1024 1024"
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        p-id="2855"
+        width="200"
+        height="200"
+      >
+        <path
+          d="M885.333333 168.533333h-448L341.333333 110.933333c-6.4-4.266667-14.933333-6.4-21.333333-6.4H134.4c-51.2 0-93.866667 42.666667-93.866667 93.866667v622.933333c0 51.2 42.666667 93.866667 93.866667 93.866667h750.933333c51.2 0 93.866667-42.666667 93.866667-93.866667V262.4c0-51.2-40.533333-93.866667-93.866667-93.866667z m-738.133333 21.333334h160l96 57.6c6.4 4.266667 14.933333 6.4 21.333333 6.4h445.866667c12.8 0 21.333333 8.533333 21.333333 21.333333V298.666667c0 12.8-8.533333 21.333333-21.333333 21.333333h-725.333333c-12.8 0-21.333333-8.533333-21.333334-21.333333V211.2c2.133333-10.666667 12.8-21.333333 23.466667-21.333333z"
+          fill="#80B8F8"
+          p-id="2856"
+        ></path>
+      </svg>
+      <% } %>
+      <span class="permission">(<%= item.permission %>)</span>
+      <span class="time"><%= item.time %></span>
+      <span class="size"><%= item.size %></span>
+      <a href="<%= item.href %>"><%= item.dir %></a>
+    </div>
+    <% }) %>
+    <br>
+    <address><%= footer %></address>
+    <script>
+      // 监听地址变化
+      const titleEle = document.getElementById("title");
+      const pathname = window.location.pathname;
+      if (pathname === "/") {
+        titleEle.innerHTML = "Index of /";
+      } else {
+        titleEle.innerHTML = `Index of ${pathname}/`;
+      }
+    </script>
+  </body>
 </html>

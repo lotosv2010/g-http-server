@@ -11,15 +11,13 @@ const mime = require('mime')
 const chalk = require('chalk')
 const internalIp = require('internal-ip')
 const esj = require('ejs')
-
-const template = readFileSync(path.resolve(__dirname, 'template.ejs'), 'utf-8')
+const { getPermissionString, byteToSize } = require('./utils')
 
 class Server {
   constructor(config) {
     this.port = config.port
     this.directory = config.directory
     this.host = config.host
-    this.template = template
   }
   async handleRequest(request, response) {
     const { pathname } = url.parse(decodeURIComponent(request.url))
@@ -45,17 +43,27 @@ class Server {
   }
   async showList(request, response, filePath, statObj, pathname) {
     // 读取目录包含的信息
-    const dirs = await fs.readdir(filePath)
     try {
-      const parseObj = dirs.map(item => ({
-        dir: item,
-        href: path.join(pathname, item)
-      }))
-      const templateStr = await ejs.render(this.template, {dirs: parseObj}, { async: true})
-      response.setHeader('Content-Type', 'text/html;charset=utf-8;')
-      response.end(templateStr)
-    } catch (e) {
-      this.sendError(request, response, e)
+      const dirs = await fs.readdir(filePath);
+      const parseFiles = await await Promise.all(dirs.map(async item => {
+        const dirStat = await fs.stat(path.join(filePath, item));
+        return {
+          dir: item,
+          href: path.join(pathname, item),
+          isFile: dirStat.isFile(),
+          permission: getPermissionString(dirStat.mode),
+          size: byteToSize(dirStat.size),
+          time: dirStat.mtime.toLocaleString()
+        }
+      }));
+      const footer = `Node.js ${process.version}/ ecstatic server running @ ${this.host}:${this.port}`
+      const template = await fs.readFile(path.join(__dirname, 'template.ejs'), 'utf-8');
+      const templateStr = await ejs.render(template, { dirs: parseFiles, footer }, { async: true});
+      response.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8;'});
+      response.end(templateStr);
+    } catch (error) {
+      console.log(error)
+      this.sendError(request, response, error);
     }
   }
   gzip(request, response, filePath, statObj) {
