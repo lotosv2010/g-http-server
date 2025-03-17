@@ -1,8 +1,7 @@
 const http = require('http')
 const fs = require('fs').promises
-const { createReadStream, createWriteStream, readFileSync } = require('fs')
+const { createReadStream, createWriteStream, readFileSync, existsSync } = require('fs')
 const path = require('path')
-const url = require('url')
 const crypto = require('crypto')
 // 第三方模块
 const ejs = require('ejs')
@@ -11,6 +10,7 @@ const mime = require('mime')
 const chalk = require('chalk')
 const internalIp = require('internal-ip')
 const esj = require('ejs')
+const dayjs = require('dayjs')
 const { getPermissionString, byteToSize } = require('./utils')
 
 class Server {
@@ -19,26 +19,72 @@ class Server {
     this.directory = config.directory
     this.host = config.host
   }
-  async handleRequest(request, response) {
-    const { pathname } = url.parse(decodeURIComponent(request.url))
-    let filePath = path.join(this.directory, pathname)
-    try {
-      const statObj = await fs.stat(filePath)
-      if(statObj.isFile()) {
-        // 文件
-        this.sendFile(request, response, filePath, statObj)
-      } else {
-        // 文件夹
-        try {
-          const concatFilePath = path.join(filePath, 'index.html')
-          const statObj = await fs.stat(concatFilePath)
-          this.sendFile(request, response, concatFilePath, statObj)
-        } catch (e) {
-          this.showList(request, response, filePath, statObj, pathname)
-        }
+  parseUrl(request) {
+    return new URL(request.url, `http://${request.headers.host}`)
+  }
+  async processAsset(request, response, url) {
+    const requestUrl = path.join(this.directory, url.pathname);
+    const stat = await fs.stat(requestUrl);
+    if (stat.isFile()) { // 文件
+      await this.sendFile(request, response, requestUrl, stat)
+    } else { // 目录
+      try {
+        const concatFilePath = path.join(requestUrl, 'index.html');
+        const concatStat = await fs.stat(concatFilePath);
+        await this.sendFile(request, response, concatFilePath, concatStat)
+      } catch (error) {
+        this.showList(request, response, requestUrl, stat, url.pathname);
       }
+    }
+  }
+  processParams(searchParams) {
+    const params = {}
+    for (const [key, value] of searchParams.entries()) {
+      params[key] = value;
+    }
+    return params;
+  }
+  async processMock(request, response, url) {
+    let flag = false;
+    const mockPath = path.join(this.directory, 'mock.js');
+    request.query = this.processParams(url.searchParams);
+    // body
+    request.body = await new Promise((resolve, reject) => {
+      const chunks = []
+      request.on('data', (chunk) => {
+        chunks.push(chunk)
+      })
+      request.on('end', () => {
+        let body = Buffer.concat(chunks).toString();
+        switch (request.headers['content-type']) {
+          case 'application/json':
+            body = JSON.parse(body);
+            break;
+          case 'application/x-www-form-urlencoded':
+            body = this.processParams(new URLSearchParams(body))
+            break;
+          default:
+            break;
+        }
+        resolve(body);
+      })
+    });
+    if (existsSync(mockPath)) {
+      const mockFn = require(mockPath);
+      flag = mockFn(url.pathname, request, response);
+    }
+    return flag;
+  }
+  handleRequest = async (request, response) => {
+    try {
+      const url = this.parseUrl(request);
+      // 处理mock数据
+      const isMock = await this.processMock(request, response, url);
+      if (isMock) return;
+      // 处理静态资源
+      await this.processAsset(request, response, url);
     } catch (error) {
-      this.sendError(request, response, error)
+      this.sendError(request, response, error);
     }
   }
   async showList(request, response, filePath, statObj, pathname) {
@@ -53,7 +99,7 @@ class Server {
           isFile: dirStat.isFile(),
           permission: getPermissionString(dirStat.mode),
           size: byteToSize(dirStat.size),
-          time: dirStat.mtime.toLocaleString()
+          time: dayjs(dirStat.mtime).format('YYYY-MM-DD HH:mm:ss')
         }
       }));
       const footer = `Node.js ${process.version}/ ecstatic server running @ ${this.host}:${this.port}`
@@ -62,7 +108,6 @@ class Server {
       response.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8;'});
       response.end(templateStr);
     } catch (error) {
-      console.log(error)
       this.sendError(request, response, error);
     }
   }
@@ -106,15 +151,15 @@ class Server {
         response.statusCode = 304
         return response.end()
       }
+      const gzip = this.gzip(request, response, filePath, statObj)
+      response.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`)
+      if(gzip) {
+        createReadStream(filePath).pipe(gzip).pipe(response)
+      } else {
+        createReadStream(filePath).pipe(response)
+      }
     } catch (e) {
       console.log(e)
-    }
-    const gzip = this.gzip(request, response, filePath, statObj)
-    response.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`)
-    if(gzip) {
-      createReadStream(filePath).pipe(gzip).pipe(response)
-    } else {
-      createReadStream(filePath).pipe(response)
     }
   }
   sendError(request, response, error) {
