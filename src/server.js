@@ -3,6 +3,7 @@ const fs = require('fs').promises
 const { createReadStream, createWriteStream, readFileSync, existsSync } = require('fs')
 const path = require('path')
 const crypto = require('crypto')
+const zlib = require('zlib')
 // 第三方模块
 const ejs = require('ejs')
 const debug = require('debug')('server')
@@ -130,11 +131,17 @@ class Server {
       this.sendError(request, response, error);
     }
   }
-  gzip(request, response, filePath, statObj) {
-    const ae = request.headers['accept-encoding']
-    if(ae && ae.includes('gzip')) {
-      response.setHeader('Content-Encoding', 'gzip')
-      return require('zlib').createGzip() // 创建转化流
+  gzip(request, response) {
+    const encoding = request.headers['accept-encoding'];
+    if(encoding?.includes('gzip')) {
+      response.setHeader('Content-Encoding', 'gzip');
+      return zlib.createGzip() // 创建转化流
+    } else if(encoding?.includes('br')) {
+      response.setHeader('Content-Encoding', 'br')
+      return zlib.createBrotliCompress()
+    } else if(encoding?.includes('deflate')) {
+      response.setHeader('Content-Encoding', 'deflate')
+      return zlib.createDeflate()
     } else {
       return false
     }
@@ -170,7 +177,7 @@ class Server {
         response.statusCode = 304
         return response.end()
       }
-      const gzip = this.gzip(request, response, filePath, statObj)
+      const gzip = this.gzip(request, response);
       response.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`)
       if(gzip) {
         createReadStream(filePath).pipe(gzip).pipe(response)
