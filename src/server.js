@@ -11,13 +11,20 @@ const crypto = require("crypto");
 const zlib = require("zlib");
 // 引入第三方模块
 const ejs = require("ejs");
-const debug = require("debug")("server");
 const mime = require("mime");
 const chalk = require("chalk");
 const internalIp = require("internal-ip");
 const dayjs = require("dayjs");
+// 这是一个在控制台输出的模块，名称特点为：第一部分为项目名，第二部分为模块名
+// 每个debug实例都有一个名字，是否在控制台打印取决于环境变量中的DEBUG是否等于static:server
+const debug = require('debug')('static:server');
 // 引入自定义的工具函数
 const { getPermissionString, byteToSize } = require("./utils");
+
+// 设置调试模式为开启
+debug.enabled = true;
+// 设置环境变量的值
+process.env.DEBUG = 'static:server';
 
 /**
  * Server类用于创建和管理HTTP服务器
@@ -125,7 +132,8 @@ class Server {
         return mockFn(url.pathname, request, response);
       }
     } catch (error) {
-      debug("Mock file not found or invalid:", error.message);
+      debug(error);
+      this.sendError(request, response, error);
     }
     return false;
   }
@@ -329,7 +337,7 @@ class Server {
         createReadStream(filePath).pipe(response);
       }
     } catch (e) {
-      debug("Error while sending file:", error.message);
+      debug(error);
       this.sendError(request, response, error);
     }
   }
@@ -342,7 +350,7 @@ class Server {
    */
   sendError(request, response, error) {
     // 调用debug函数记录错误信息
-    debug("Error occurred:", error.message);
+    debug(error);
     // 设置响应状态码为404，表示资源未找到
     response.statusCode = 404;
     // 结束响应，发送'Not Found'消息给客户端
