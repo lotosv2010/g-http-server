@@ -1,22 +1,22 @@
 module.exports = function (pathname, req, res) {
   if (pathname === "/user") {
     if (req.method === "GET") {
-      console.log(req.query, req.body)
+      res.setHeader("Content-Type", "application/json");
       res.end(
         JSON.stringify({
-          name: "zhangsan",
-          age: 18,
+          ...req.body,
+          ...req.query,
         })
       );
     } else if (req.method === "POST") {
-      console.log(req.query, req.body)
+      res.setHeader("Content-Type", "application/json");
       res.end(
         JSON.stringify({
-          name: "lisi",
-          age: 20,
+          ...req.body,
+          ...req.query,
         })
       );
-    }
+    } 
     return true
   }
 };

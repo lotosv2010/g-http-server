@@ -55,7 +55,7 @@ class Server {
         chunks.push(chunk)
       })
       request.on('end', () => {
-        let body = Buffer.concat(chunks).toString();
+        let body = Buffer.concat(chunks).toString() || '{}';
         switch (request.headers['content-type']) {
           case 'application/json':
             body = JSON.parse(body);
@@ -75,9 +75,28 @@ class Server {
     }
     return flag;
   }
+  // 处理跨域
+  async cors(request, response) {
+    if(request.headers.origin) {
+      response.setHeader('Access-Control-Allow-Origin', request.headers.origin)
+      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+      response.setHeader('Access-Control-Max-Age', 86400)
+      // 处理预检请求
+      if(request.method === 'OPTIONS') {
+        // response.statusCode = 204;
+        response.end();
+        return true;
+      }
+    }
+  }
   handleRequest = async (request, response) => {
     try {
       const url = this.parseUrl(request);
+      // 处理跨域
+      if(await this.cors(request, response)) {
+        return;
+      }
       // 处理mock数据
       const isMock = await this.processMock(request, response, url);
       if (isMock) return;
