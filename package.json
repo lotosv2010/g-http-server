@@ -1,7 +1,7 @@
 {
   "name": "g-http-server",
   "version": "1.0.1",
-  "description": "",
+  "description": "http server",
   "main": "index.js",
   "bin": {
     "g-http-server": "./bin/www.js",
@@ -14,7 +14,7 @@
     "type": "git",
     "url": "https://github.com/lotosv2010/g-http-server.git"
   },
-  "author": "",
+  "author": "gwb",
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.0",
