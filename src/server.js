@@ -46,8 +46,9 @@ class Server {
     return params;
   }
   async processMock(request, response, url) {
+    if(!url.pathname.startsWith('/mock/')) return;
     let flag = false;
-    const mockPath = path.join(this.directory, 'mock.js');
+    const mockPath = path.join(this.directory, 'mock', 'index.js');
     request.query = this.processParams(url.searchParams);
     // body
     request.body = await new Promise((resolve, reject) => {
@@ -169,16 +170,38 @@ class Server {
     }
     return true
   }
+  async processReferer(request, response, filePath) {
+    const mimeType = mime.getType(filePath);
+    if(/image/.test(mimeType)) {
+      const referrer = request.headers.referer || request.headers.referrer;
+      if(referrer) {
+        const referer = new URL(referrer).host;
+        const host = request.headers.host;
+        console.log(referer,'referer', host)
+        if(referer !== host) {
+          response.statusCode = 403
+          response.end('Forbidden')
+          return true
+        }
+      }
+    }
+  }
   async sendFile(request, response, filePath, statObj) {
-    // 缓存
     try {
+      // 缓存
       let cache = await this.cache(request, response, filePath, statObj)
       if(cache) {
         response.statusCode = 304
         return response.end()
       }
+      // 防盗链
+      if(await this.processReferer(request, response, filePath)) {
+        return;
+      }
+      // 压缩
       const gzip = this.gzip(request, response);
-      response.setHeader('Content-Type', `${mime.getType(filePath)};charset=utf-8;`)
+      const mimeType = mime.getType(filePath);
+      response.setHeader('Content-Type', `${mimeType};charset=utf-8;`)
       if(gzip) {
         createReadStream(filePath).pipe(gzip).pipe(response)
       } else {

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>防盗链</title>
+  <!-- 如果网站没有referer会导致发送任何资源都不会带referer -->
+  <!-- <meta name="referrer" content="never"> -->
+</head>
+<body>
+  <!-- 如果图片直接打开不会增加referer的 -->
+  <!-- 我们应该进行校验，如果引用我的人和我的域不是用一个，应该返回错误图片 -->
+  <img src="http://dev-m-test.yaoex.com:3000/public/1.png" alt="" srcset="">
+  <img src="http://localhost:3000/public/2.png" alt="" srcset="">
+</body>
+</html>
