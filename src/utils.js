@@ -1,3 +1,8 @@
+/**
+ * 将字节转换为合适的文件大小格式
+ * @param {number} byte 输入的字节数
+ * @returns {string} 格式化后的文件大小字符串
+ */
 exports.byteToSize = (byte) => {
   if (byte === 0) return '';
   const units = ['B', 'KB', 'MB', 'GB'];
